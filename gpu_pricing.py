@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
+import chromedriver_autoinstaller
 
 refresh_interval = 60 * 1000  # 60 seconds
 st_autorefresh(interval=refresh_interval, key="refresh")
@@ -403,12 +404,14 @@ def scrape_nebius_gpu_pricing():
 INR_TO_USD = 1 / 83
 
 def get_webdriver():
+    chromedriver_autoinstaller.install()  # Ensures the correct version of ChromeDriver is installed
     options = Options()
     options.add_argument("--headless")
-    options.add_argument("--ignore-certificate-errors")
-    options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
-    return webdriver.Chrome(service=Service(), options=options)
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--ignore-certificate-errors")
+    return webdriver.Chrome(options=options)
 
 def scrape_oracle_gpu_pricing():
     url = "https://www.oracle.com/in/cloud/price-list/"
