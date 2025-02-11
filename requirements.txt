@@ -1,0 +1,16 @@
+Babel @ file:///C:/ci_311/babel_1676427169844/work
+beautifulsoup4==4.12.2
+lxml @ file:///C:/b/abs_9e7tpg2vv9/croot/lxml_1695058219431/work
+numpy==1.23.5
+pandas==2.0.1
+regex @ file:///C:/b/abs_d5e2e5uqmr/croot/regex_1696515472506/work
+requests==2.31.0
+requests-file @ file:///Users/ktietz/demo/mc3/conda-bld/requests-file_1629455781986/work
+requests-oauthlib==1.3.1
+requests-toolbelt @ file:///C:/b/abs_2fsmts66wp/croot/requests-toolbelt_1690874051210/work
+selenium==4.28.1
+streamlit @ file:///home/conda/feedstock_root/build_artifacts/streamlit_1734513191614/work
+streamlit-autorefresh==1.0.1
+urllib3==1.26.16
+webdriver-manager==4.0.2
+
