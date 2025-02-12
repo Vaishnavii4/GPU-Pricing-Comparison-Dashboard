@@ -1,7 +1,4 @@
 # Web scraping dependencies
-selenium
-chromedriver-autoinstaller
-webdriver-manager
 beautifulsoup4
 lxml
 requests
