@@ -398,18 +398,19 @@ def scrape_nebius_gpu_pricing():
 
 
     return nebius_data
+
+
 def scrape_gpu_pricing():
     url = "https://datacrunch.io/blog/cloud-gpu-pricing-comparison"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"}
     
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f"❌ Failed to fetch data. Status Code: {response.status_code}")
         return None
 
     soup = BeautifulSoup(response.text, "html.parser")
     tables = soup.find_all("table")
-    
+
     processed_tables = []
     table_mappings = {
         0: "Price per Instance", 1: "Price per GPU", 2: "Price per GPU",
@@ -417,27 +418,36 @@ def scrape_gpu_pricing():
     }
 
     for table_index, table in enumerate(tables):
-        source = table.find_previous(["h2", "h3"]).text.strip() if table.find_previous(["h2", "h3"]) else "Unknown"
+        source = table.find_previous(["h2", "h3"])
+        source = source.get_text(strip=True) if source else "Unknown"
+
         rows = table.find_all("tr")
-        columns = [col.text.strip() for col in rows[0].find_all(["td", "th"])] + ["Source"]
-        table_data = [{col: val.text.strip() for col, val in zip(columns, row.find_all(["td", "th"]))} | {"Source": source} for row in rows[1:]]
+        columns = [col.get_text(strip=True) for col in rows[0].find_all(["td", "th"])] + ["Source"]
 
-        df_table = pd.DataFrame(table_data)
-        if table_index in table_mappings:
-            df_table.rename(columns={table_mappings[table_index]: "Price"}, inplace=True)
+        for row in rows[1:]:
+            values = [val.get_text(strip=True) for val in row.find_all(["td", "th"])] + [source]
+            row_data = dict(zip(columns, values))
 
-        df_table = df_table[["GPU", "Price", "Source"]]
-        processed_tables.append(df_table)
+            if table_index in table_mappings:
+                row_data["Price"] = row_data.pop(table_mappings[table_index], None)
 
-    final_df = pd.concat(processed_tables, ignore_index=True)
-    final_df = final_df[final_df["GPU"].str.contains("H100|L40S", case=False, na=False)]
+            if "GPU" in row_data and row_data["GPU"] and ("H100" in row_data["GPU"] or "L40S" in row_data["GPU"]):
+                gpu_model = re.search(r"(H100|L40S)", row_data["GPU"]).group(1)
+                gpu_model = "Nvidia " + gpu_model
 
-    final_df["GPU Model"] = final_df["GPU"].str.extract(r"(H100|L40S)").replace({"H100": "Nvidia H100", "L40S": "Nvidia L40S"})
-    final_df["GPU Count"] = final_df["GPU"].str.extract(r"x(\d+)").fillna(1).astype(int)
-    final_df["GPU RAM"] = final_df["GPU"].str.extract(r"(\d+\s?GB)")
-    final_df["Source"] = final_df["Source"].str.replace(r"\s*Cloud.*", "", regex=True).str.strip()
+                gpu_count_match = re.search(r"x(\d+)", row_data["GPU"])
+                gpu_count = int(gpu_count_match.group(1)) if gpu_count_match else 1
 
-    return final_df[["GPU Model", "GPU Count", "Price", "GPU RAM", "Source"]].reset_index(drop=True)
+                gpu_ram_match = re.search(r"(\d+\s?GB)", row_data["GPU"])
+                gpu_ram = gpu_ram_match.group(1) if gpu_ram_match else None
+
+                source = re.sub(r"\s*Cloud.*", "", source).strip()
+
+                processed_tables.append([gpu_model, gpu_count, gpu_ram, row_data["Price"], source])
+
+    df_gpu_pricing = pd.DataFrame(processed_tables, columns=["GPU Model", "GPU Count", "GPU RAM", "Price", "Source"])
+
+    return df_gpu_pricing
 # INR_TO_USD = 1 / 83
 
 
