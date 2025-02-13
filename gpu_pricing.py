@@ -432,8 +432,8 @@ def scrape_gpu_pricing():
                 row_data["Price"] = row_data.pop(table_mappings[table_index], None)
 
             if "GPU" in row_data and row_data["GPU"] and ("H100" in row_data["GPU"] or "L40S" in row_data["GPU"]):
-                gpu_model = re.search(r"(H100|L40S)", row_data["GPU"]).group(1)
-                gpu_model = "Nvidia " + gpu_model
+                gpu_model_match = re.search(r"(H100|L40S)", row_data["GPU"])
+                gpu_model = f"Nvidia {gpu_model_match.group(1)}" if gpu_model_match else None
 
                 gpu_count_match = re.search(r"x(\d+)", row_data["GPU"])
                 gpu_count = int(gpu_count_match.group(1)) if gpu_count_match else 1
@@ -445,7 +445,9 @@ def scrape_gpu_pricing():
 
                 processed_tables.append([gpu_model, gpu_count, gpu_ram, row_data["Price"], source])
 
-    df_gpu_pricing = pd.DataFrame(processed_tables, columns=["GPU Model", "GPU Count",  "Price","GPU RAM", "Source"])
+    df_gpu_pricing = pd.DataFrame(processed_tables, columns=["GPU Model", "GPU Count", "GPU RAM", "Price", "Source"])
+
+    df_gpu_pricing["Price"] = pd.to_numeric(df_gpu_pricing["Price"].str.replace("$", "").str.strip(), errors='coerce')
 
     return df_gpu_pricing
 # INR_TO_USD = 1 / 83
@@ -948,10 +950,9 @@ def main():
         df_n = pd.DataFrame(nebius_data, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
         combined_df = pd.concat([combined_df, df_n], ignore_index=True)
    
-    df_gpu_pricing = scrape_gpu_pricing()
-    if df_gpu_pricing:
-        df_g = pd.DataFrame(df_gpu_pricing, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
-        combined_df = pd.concat([combined_df, df_g], ignore_index=True)
+   gpu_data = scrape_gpu_pricing()
+    if gpu_data is not None and not gpu_data.empty:
+        combined_df = pd.concat([combined_df, gpu_data], ignore_index=True)
 
     
     # pricing_data = scrape_oracle_gpu_pricing()
