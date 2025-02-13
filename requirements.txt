@@ -16,5 +16,5 @@ streamlit-autorefresh
 
 # Miscellaneous utilities
 regex
-selenium
-webdriver-manager
+# selenium
+# webdriver-manager
