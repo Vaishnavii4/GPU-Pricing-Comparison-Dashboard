@@ -1,11 +1,11 @@
 import re
-# from selenium import webdriver
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
-# from selenium.webdriver.chrome.options import Options
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from babel.numbers import format_currency
 import streamlit as st
 import requests
@@ -398,12 +398,6 @@ def scrape_nebius_gpu_pricing():
 
 
     return nebius_data
-
-
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-import re
 
 def scrape_gpu_pricing():
     url = "https://datacrunch.io/blog/cloud-gpu-pricing-comparison"
@@ -952,14 +946,12 @@ def main():
     if nebius_data:
         df_n = pd.DataFrame(nebius_data, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
         combined_df = pd.concat([combined_df, df_n], ignore_index=True)
-   
+
     df_gpu_pricing = scrape_gpu_pricing()
 
     if df_gpu_pricing is not None and not df_gpu_pricing.empty:
         df_gpu = pd.DataFrame(df_gpu_pricing, columns=['GPU Model', 'GPU Count', 'GPU RAM', 'Price', 'Source'])
         combined_df = pd.concat([combined_df, df_gpu], ignore_index=True)
-
-
 
     
     # pricing_data = scrape_oracle_gpu_pricing()
