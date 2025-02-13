@@ -445,7 +445,7 @@ def scrape_gpu_pricing():
 
                 processed_tables.append([gpu_model, gpu_count, gpu_ram, row_data["Price"], source])
 
-    df_gpu_pricing = pd.DataFrame(processed_tables, columns=["GPU Model", "GPU Count", "GPU RAM", "Price", "Source"])
+    df_gpu_pricing = pd.DataFrame(processed_tables, columns=["GPU Model", "GPU Count",  "Price","GPU RAM", "Source"])
 
     return df_gpu_pricing
 # INR_TO_USD = 1 / 83
