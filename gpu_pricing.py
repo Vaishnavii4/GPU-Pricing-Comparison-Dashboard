@@ -13,8 +13,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 
-refresh_interval = 60 * 1000  # 60 seconds
-st_autorefresh(interval=refresh_interval, key="refresh")
+# refresh_interval = 60 * 1000  # 60 seconds
+# st_autorefresh(interval=refresh_interval, key="refresh")
 
 
 pd.set_option("display.max_columns", None)
@@ -413,218 +413,218 @@ def get_webdriver():
     return webdriver.Chrome(options=options)
 
 
-def scrape_oracle_gpu_pricing():
-    url = "https://www.oracle.com/in/cloud/price-list/"
-    driver = get_webdriver()
-    driver.get(url)
+# def scrape_oracle_gpu_pricing():
+#     url = "https://www.oracle.com/in/cloud/price-list/"
+#     driver = get_webdriver()
+#     driver.get(url)
 
-    try:
-        WebDriverWait(driver, 3).until(
-            EC.presence_of_element_located((By.XPATH, "//table[contains(@aria-labelledby, 'compute-gpu')]"))
-        )
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-    finally:
-        driver.quit()
+#     try:
+#         WebDriverWait(driver, 3).until(
+#             EC.presence_of_element_located((By.XPATH, "//table[contains(@aria-labelledby, 'compute-gpu')]"))
+#         )
+#         soup = BeautifulSoup(driver.page_source, "html.parser")
+#     finally:
+#         driver.quit()
 
-    rows = soup.select("table[aria-labelledby='compute-gpu'] tbody tr")
-    pricing_data = [
-        {
-            "Shape": row.find_all(["th", "td"])[0].get_text(strip=True),
-            "GPUs": row.find_all(["th", "td"])[1].get_text(strip=True),
-            "Architecture": row.find_all(["th", "td"])[2].get_text(strip=True),
-            "Network": row.find_all(["th", "td"])[3].get_text(strip=True),
-            "GPU Price Per Hour (INR)": row.find_all(["th", "td"])[4].get_text(strip=True).replace("₹", "").strip()
-        }
-        for row in rows if len(row.find_all(["th", "td"])) >= 5
-    ]
-    return pricing_data
+#     rows = soup.select("table[aria-labelledby='compute-gpu'] tbody tr")
+#     pricing_data = [
+#         {
+#             "Shape": row.find_all(["th", "td"])[0].get_text(strip=True),
+#             "GPUs": row.find_all(["th", "td"])[1].get_text(strip=True),
+#             "Architecture": row.find_all(["th", "td"])[2].get_text(strip=True),
+#             "Network": row.find_all(["th", "td"])[3].get_text(strip=True),
+#             "GPU Price Per Hour (INR)": row.find_all(["th", "td"])[4].get_text(strip=True).replace("₹", "").strip()
+#         }
+#         for row in rows if len(row.find_all(["th", "td"])) >= 5
+#     ]
+#     return pricing_data
 
-def scrape_genesis_gpu_pricing():
-    url = "https://www.genesiscloud.com/products/nvidia-hgx-h100"
-    driver = get_webdriver()
-    driver.get(url)
+# def scrape_genesis_gpu_pricing():
+#     url = "https://www.genesiscloud.com/products/nvidia-hgx-h100"
+#     driver = get_webdriver()
+#     driver.get(url)
 
-    try:
-        WebDriverWait(driver, 3).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "h1.about-two-hero-heading"))
-        )
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-    finally:
-        driver.quit()
+#     try:
+#         WebDriverWait(driver, 3).until(
+#             EC.presence_of_element_located((By.CSS_SELECTOR, "h1.about-two-hero-heading"))
+#         )
+#         soup = BeautifulSoup(driver.page_source, "html.parser")
+#     finally:
+#         driver.quit()
 
-    price_match = re.search(r'\$(\d+\.\d+)/h', soup.text)
-    price_usd = price_match.group(1) if price_match else "N/A"
+#     price_match = re.search(r'\$(\d+\.\d+)/h', soup.text)
+#     price_usd = price_match.group(1) if price_match else "N/A"
 
-    strong_element = soup.select_one(".pricing-heading-six strong")
-    pricing_data = [
-        {
-            "GPU Model": "HGX H100 Cluster",
-            "GPU Count": int(re.search(r'(\d+)x', strong_element.text).group(1)) if strong_element else 1,
-            "Price": price_usd,
-            "GPU RAM": re.search(r'(\d+ GB)', strong_element.text).group(1) if strong_element else "Unknown",
-            "Source": "Genesis Cloud"
-        }
-    ] if strong_element and "NVIDIA H100" in strong_element.text else []
-    return pricing_data
+#     strong_element = soup.select_one(".pricing-heading-six strong")
+#     pricing_data = [
+#         {
+#             "GPU Model": "HGX H100 Cluster",
+#             "GPU Count": int(re.search(r'(\d+)x', strong_element.text).group(1)) if strong_element else 1,
+#             "Price": price_usd,
+#             "GPU RAM": re.search(r'(\d+ GB)', strong_element.text).group(1) if strong_element else "Unknown",
+#             "Source": "Genesis Cloud"
+#         }
+#     ] if strong_element and "NVIDIA H100" in strong_element.text else []
+#     return pricing_data
 
-def get_vultr_page():
-    """Loads the Vultr pricing page once and returns the parsed BeautifulSoup object."""
-    url = "https://www.vultr.com/pricing/"
-    driver = get_webdriver()
-    driver.get(url)
-
- 
-    try:
-        WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "pricing__subsection")))
-    except:
-        driver.quit()
-        return None 
-
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-    driver.quit() 
-    return soup
-
-def scrape_vultr_gpu_pricing(soup):
-    """Scrapes GPU pricing table from Vultr."""
-    if soup is None:
-        return []
-
-    pricing_sections = soup.find_all("div", class_="pricing__subsection")
-    if not pricing_sections:
-        return []
-
-    pricing_data = []
-
-    for section in pricing_sections:
-        title_element = section.find("h3", class_="pricing__subsection-title")
-        if not title_element:
-            continue
-        
-        gpu_model = title_element.text.strip()
+# def get_vultr_page():
+#     """Loads the Vultr pricing page once and returns the parsed BeautifulSoup object."""
+#     url = "https://www.vultr.com/pricing/"
+#     driver = get_webdriver()
+#     driver.get(url)
 
  
-        if "HGX H100" in gpu_model:
-            gpu_model = "HGX H100 Cluster"
-        elif "H100" in gpu_model:
-            gpu_model = "Nvidia H100"
-        elif "L40S" in gpu_model:
-            gpu_model = "Nvidia L40S"
-        else:
-            continue  
+#     try:
+#         WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "pricing__subsection")))
+#     except:
+#         driver.quit()
+#         return None 
 
-        pricing_table = section.find("div", class_="pt pt--md-boxes is-animated")
-        if not pricing_table:
-            continue
+#     soup = BeautifulSoup(driver.page_source, "html.parser")
+#     driver.quit() 
+#     return soup
 
-        rows = pricing_table.find_all("div", class_="pt__row")
-        for row in rows:
-            cells = row.find_all("div", class_="pt__cell")
-            if len(cells) < 7:
-                continue  
+# def scrape_vultr_gpu_pricing(soup):
+#     """Scrapes GPU pricing table from Vultr."""
+#     if soup is None:
+#         return []
 
-            gpu_count = int(cells[0].text.strip()) if cells[0].text.strip().isdigit() else 1
-            gpu_ram = cells[1].text.strip().split()[0] + " GB"
-            price_text = cells[6].text.strip().replace("$", "").split("/")[0]
+#     pricing_sections = soup.find_all("div", class_="pricing__subsection")
+#     if not pricing_sections:
+#         return []
 
-            try:
-                price = float(price_text)
-                formatted_price = format_currency(price, "USD", locale="en_US")
-            except ValueError:
-                formatted_price = "N/A"
+#     pricing_data = []
 
-            pricing_data.append([gpu_model, gpu_count, formatted_price, gpu_ram, "Vultr"])
+#     for section in pricing_sections:
+#         title_element = section.find("h3", class_="pricing__subsection-title")
+#         if not title_element:
+#             continue
+        
+#         gpu_model = title_element.text.strip()
+
+ 
+#         if "HGX H100" in gpu_model:
+#             gpu_model = "HGX H100 Cluster"
+#         elif "H100" in gpu_model:
+#             gpu_model = "Nvidia H100"
+#         elif "L40S" in gpu_model:
+#             gpu_model = "Nvidia L40S"
+#         else:
+#             continue  
+
+#         pricing_table = section.find("div", class_="pt pt--md-boxes is-animated")
+#         if not pricing_table:
+#             continue
+
+#         rows = pricing_table.find_all("div", class_="pt__row")
+#         for row in rows:
+#             cells = row.find_all("div", class_="pt__cell")
+#             if len(cells) < 7:
+#                 continue  
+
+#             gpu_count = int(cells[0].text.strip()) if cells[0].text.strip().isdigit() else 1
+#             gpu_ram = cells[1].text.strip().split()[0] + " GB"
+#             price_text = cells[6].text.strip().replace("$", "").split("/")[0]
+
+#             try:
+#                 price = float(price_text)
+#                 formatted_price = format_currency(price, "USD", locale="en_US")
+#             except ValueError:
+#                 formatted_price = "N/A"
+
+#             pricing_data.append([gpu_model, gpu_count, formatted_price, gpu_ram, "Vultr"])
     
-    return pricing_data
+#     return pricing_data
 
-def scrape_vultr_gpu_price(soup):
-    """Scrapes GPU package pricing from Vultr."""
-    if soup is None:
-        return []
+# def scrape_vultr_gpu_price(soup):
+#     """Scrapes GPU package pricing from Vultr."""
+#     if soup is None:
+#         return []
 
-    gpu_section = soup.find("div", class_="section__packages")
-    if not gpu_section:
-        return []
+#     gpu_section = soup.find("div", class_="section__packages")
+#     if not gpu_section:
+#         return []
 
-    packages = gpu_section.find_all("div", class_="package package--boxed package--shadow")
-    pricing_data = []
+#     packages = gpu_section.find_all("div", class_="package package--boxed package--shadow")
+#     pricing_data = []
 
-    for package in packages:
-        title_element = package.find("h3", class_="package__title")
-        if not title_element:
-            continue
+#     for package in packages:
+#         title_element = package.find("h3", class_="package__title")
+#         if not title_element:
+#             continue
         
-        gpu_model = title_element.text.strip()
+#         gpu_model = title_element.text.strip()
 
-        if "H100" in gpu_model:
-            gpu_model = "Baremetal H100 HGX"
-        elif "L40S" in gpu_model:
-            gpu_model = "Bare Metal L40S"
-        else:
-            continue 
+#         if "H100" in gpu_model:
+#             gpu_model = "Baremetal H100 HGX"
+#         elif "L40S" in gpu_model:
+#             gpu_model = "Bare Metal L40S"
+#         else:
+#             continue 
 
-        package_list = package.find("ul", class_="package__list")
-        if not package_list:
-            continue
+#         package_list = package.find("ul", class_="package__list")
+#         if not package_list:
+#             continue
         
-        list_items = package_list.find_all("li")
-        gpu_spec = list_items[0].text.strip() if len(list_items) > 0 else "Unknown"
-        gpu_ram_match = re.search(r'(\d+ GB)', gpu_spec)
-        gpu_ram = gpu_ram_match.group(1) if gpu_ram_match else "Unknown"
-        gpu_count_match = re.search(r'(\d+) x', gpu_spec)
-        gpu_count = int(gpu_count_match.group(1)) if gpu_count_match else 1
+#         list_items = package_list.find_all("li")
+#         gpu_spec = list_items[0].text.strip() if len(list_items) > 0 else "Unknown"
+#         gpu_ram_match = re.search(r'(\d+ GB)', gpu_spec)
+#         gpu_ram = gpu_ram_match.group(1) if gpu_ram_match else "Unknown"
+#         gpu_count_match = re.search(r'(\d+) x', gpu_spec)
+#         gpu_count = int(gpu_count_match.group(1)) if gpu_count_match else 1
 
-        # Extract price
-        price_element = package.find("div", class_="package__pricing")
-        if not price_element:
-            continue
+#         # Extract price
+#         price_element = package.find("div", class_="package__pricing")
+#         if not price_element:
+#             continue
         
-        price_text = price_element.find("span").text.strip().replace("$", "")
-        try:
-            price = float(price_text)
-            formatted_price = format_currency(price, "USD", locale="en_US")
-        except ValueError:
-            formatted_price = "N/A"
+#         price_text = price_element.find("span").text.strip().replace("$", "")
+#         try:
+#             price = float(price_text)
+#             formatted_price = format_currency(price, "USD", locale="en_US")
+#         except ValueError:
+#             formatted_price = "N/A"
 
-        pricing_data.append([gpu_model, gpu_count, gpu_ram, formatted_price, "Vultr"])
+#         pricing_data.append([gpu_model, gpu_count, gpu_ram, formatted_price, "Vultr"])
     
-    return pricing_data
+#     return pricing_data
 
 
-def scrape_jarvislabs_gpu_pricing():
-    url = "https://jarvislabs.ai/pricing"
-    driver = get_webdriver()
-    driver.get(url)
-    try:
-        WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-    finally:
-        driver.quit()
-    tables = soup.select("table")
-    if not tables:
-        return []
-    pricing_data = []
-    for table in tables:
-        for row in table.select("tbody tr"):
-            if len(row.find_all("td")) < 6 or "H100" not in row.find_all("td")[0].get_text(strip=True):
-                continue
-            gpu_count_match = re.search(r'(\d+)x', row.find_all("td")[0].get_text(strip=True))
-            gpu_count = min(8, int(gpu_count_match.group(1)) if gpu_count_match else 1)
-            price_text = row.find_all("td")[5].get_text(strip=True)
-            price_match = re.search(r'₹\s*([\d,]+\.?\d*)', price_text)
-            if price_match:
-                price_inr = float(price_match.group(1).replace(",", ""))
-                price_usd = round(price_inr * INR_TO_USD, 2)
-                formatted_price = f"${price_usd:.2f}"
-            else:
-                formatted_price = "$0.00"
-            pricing_data.append({
-                "GPU Model": "Nvidia H100",
-                "GPU Count": gpu_count,
-                "Price": formatted_price,
-                "GPU RAM": row.find_all("td")[3].get_text(strip=True),
-                "Source": "JarvisLabs"
-            })
-    return pricing_data
+# def scrape_jarvislabs_gpu_pricing():
+#     url = "https://jarvislabs.ai/pricing"
+#     driver = get_webdriver()
+#     driver.get(url)
+#     try:
+#         WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+#         soup = BeautifulSoup(driver.page_source, "html.parser")
+#     finally:
+#         driver.quit()
+#     tables = soup.select("table")
+#     if not tables:
+#         return []
+#     pricing_data = []
+#     for table in tables:
+#         for row in table.select("tbody tr"):
+#             if len(row.find_all("td")) < 6 or "H100" not in row.find_all("td")[0].get_text(strip=True):
+#                 continue
+#             gpu_count_match = re.search(r'(\d+)x', row.find_all("td")[0].get_text(strip=True))
+#             gpu_count = min(8, int(gpu_count_match.group(1)) if gpu_count_match else 1)
+#             price_text = row.find_all("td")[5].get_text(strip=True)
+#             price_match = re.search(r'₹\s*([\d,]+\.?\d*)', price_text)
+#             if price_match:
+#                 price_inr = float(price_match.group(1).replace(",", ""))
+#                 price_usd = round(price_inr * INR_TO_USD, 2)
+#                 formatted_price = f"${price_usd:.2f}"
+#             else:
+#                 formatted_price = "$0.00"
+#             pricing_data.append({
+#                 "GPU Model": "Nvidia H100",
+#                 "GPU Count": gpu_count,
+#                 "Price": formatted_price,
+#                 "GPU RAM": row.find_all("td")[3].get_text(strip=True),
+#                 "Source": "JarvisLabs"
+#             })
+#     return pricing_data
 
 
 
@@ -898,78 +898,87 @@ def main():
         df_n = pd.DataFrame(nebius_data, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
         combined_df = pd.concat([combined_df, df_n], ignore_index=True)
     
-    pricing_data = scrape_oracle_gpu_pricing()
-    if pricing_data:
-        df = pd.DataFrame(pricing_data)
-        df = df[df["GPUs"].str.contains("H100|L40S", case=False, na=False)]
-        df["GPU Count"] = df["GPUs"].str.extract(r'(\d+)x').astype(float).astype("Int64")
-        df["GPU RAM"] = df["GPUs"].str.extract(r'(\d+GB)')
-        df["GPU Model"] = df["GPUs"].str.replace(r'\d+x|\d+GB', '', regex=True).str.strip()
-        df.loc[df["GPU Model"].str.contains("H100", case=False, na=False), "GPU Model"] = "Baremetal H100 HGX"
-        df.loc[df["GPU Model"].str.contains("L40S", case=False, na=False), "GPU Model"] = "Bare Metal L40S"
-        df["Price"] = df["GPU Price Per Hour (INR)"].astype(float) * INR_TO_USD
-        df["Price"] = df["Price"].apply(lambda x: f"${x:.2f}")
-        df["Source"] = "Oracle"
-        df = df[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
-        combined_df = pd.concat([combined_df, df], ignore_index=True)
+    # pricing_data = scrape_oracle_gpu_pricing()
+    # if pricing_data:
+    #     df = pd.DataFrame(pricing_data)
+    #     df = df[df["GPUs"].str.contains("H100|L40S", case=False, na=False)]
+    #     df["GPU Count"] = df["GPUs"].str.extract(r'(\d+)x').astype(float).astype("Int64")
+    #     df["GPU RAM"] = df["GPUs"].str.extract(r'(\d+GB)')
+    #     df["GPU Model"] = df["GPUs"].str.replace(r'\d+x|\d+GB', '', regex=True).str.strip()
+    #     df.loc[df["GPU Model"].str.contains("H100", case=False, na=False), "GPU Model"] = "Baremetal H100 HGX"
+    #     df.loc[df["GPU Model"].str.contains("L40S", case=False, na=False), "GPU Model"] = "Bare Metal L40S"
+    #     df["Price"] = df["GPU Price Per Hour (INR)"].astype(float) * INR_TO_USD
+    #     df["Price"] = df["Price"].apply(lambda x: f"${x:.2f}")
+    #     df["Source"] = "Oracle"
+    #     df = df[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
+    #     combined_df = pd.concat([combined_df, df], ignore_index=True)
 
 
-    pricing_data = scrape_genesis_gpu_pricing()
-    df_genesis = pd.DataFrame(pricing_data)
-    if not df_genesis.empty:
-        df_genesis = df_genesis[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
-        df_genesis['Price'] = df_genesis['Price'].apply(lambda x: f"${x}")
-        combined_df = pd.concat([combined_df, df_genesis], ignore_index=True)
+    # pricing_data = scrape_genesis_gpu_pricing()
+    # df_genesis = pd.DataFrame(pricing_data)
+    # if not df_genesis.empty:
+    #     df_genesis = df_genesis[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
+    #     df_genesis['Price'] = df_genesis['Price'].apply(lambda x: f"${x}")
+    #     combined_df = pd.concat([combined_df, df_genesis], ignore_index=True)
 
-    soup = get_vultr_page()
-    pricing_data_1 = scrape_vultr_gpu_pricing(soup)
-    pricing_data_2 = scrape_vultr_gpu_price(soup)
-    combined_data = pricing_data_1 + pricing_data_2
+    # soup = get_vultr_page()
+    # pricing_data_1 = scrape_vultr_gpu_pricing(soup)
+    # pricing_data_2 = scrape_vultr_gpu_price(soup)
+    # combined_data = pricing_data_1 + pricing_data_2
 
-    if combined_data:
-        df_vu = pd.DataFrame(combined_data, columns=["GPU Model", "GPU Count", "Price", "GPU RAM", "Source"])
-        combined_df = pd.concat([combined_df, df_vu], ignore_index=True)
+    # if combined_data:
+    #     df_vu = pd.DataFrame(combined_data, columns=["GPU Model", "GPU Count", "Price", "GPU RAM", "Source"])
+    #     combined_df = pd.concat([combined_df, df_vu], ignore_index=True)
 
-    pricing_data = scrape_jarvislabs_gpu_pricing()
-    df = pd.DataFrame(pricing_data)
-    if not df.empty:
-        df = df.iloc[1:].reset_index(drop=True)
-        df = df[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
-        combined_df = pd.concat([combined_df, df], ignore_index=True)
+    # pricing_data = scrape_jarvislabs_gpu_pricing()
+    # df = pd.DataFrame(pricing_data)
+    # if not df.empty:
+    #     df = df.iloc[1:].reset_index(drop=True)
+    #     df = df[['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source']]
+    #     combined_df = pd.concat([combined_df, df], ignore_index=True)
 
 
     combined_df = add_node_column(combined_df)
 
-    if not combined_df.empty:
-        
-        st.dataframe(combined_df, use_container_width=True)  # ✅ Show all columns
-    else:
-        st.write("⚠️ No data to display from any source.")
 
-
-
-# Assuming combined_df is your DataFrame containing GPU data
 
 st.sidebar.header("🔎 Filter Results")
 
+# Sidebar Filters
 input_gpu_name = st.sidebar.text_input("Enter GPU Model (e.g., Nvidia H100, L40S)").strip()
-input_gpu_count = st.sidebar.text_input("Enter GPU Count (leave blank to skip)").strip()
+input_gpu_count = st.sidebar.text_input("Enter GPU Count").strip()
 input_gpu_count = int(input_gpu_count) if input_gpu_count.isdigit() else None
-input_node = st.sidebar.text_input("Enter Node Info (leave blank to skip)").strip()
+input_node = st.sidebar.text_input("Enter Node Info").strip()
+input_source = st.sidebar.text_input("Enter Source (e.g., Shakti Cloud, CoreWeave)").strip()
 
-# 🔹 **Ensure Main() Runs Before Using Data**
 if __name__ == "__main__":
-    main()  # ✅ Run main() before filtering
+    main()  # ✅ Ensure data is loaded before filtering
 
     if 'combined_df' in globals() and not combined_df.empty:
-        if input_gpu_name:
-            result = filter_gpu_data(combined_df, input_gpu_name, input_gpu_count, input_node)
+        # ✅ Apply filters directly on `combined_df`
+        mask = pd.Series(True, index=combined_df.index)
 
-            if not result.empty:
-                result.insert(0, 'Sequence', range(1, len(result) + 1))
-                st.subheader("📊 Filtered Results")
-                st.dataframe(result.reset_index(drop=True), use_container_width=True)
-            else:
-                st.write(f"❌ No data found for **GPU Model: {input_gpu_name}**, **GPU Count: {input_gpu_count}**, **Node: {input_node}**.")
+        if input_gpu_name:
+            mask &= combined_df["GPU Model"].str.contains(input_gpu_name, case=False, na=False)
+        if input_gpu_count is not None:
+            mask &= combined_df["GPU Count"] == input_gpu_count
+        if input_node:
+            mask &= combined_df["Node"].str.contains(input_node, case=False, na=False)
+        if input_source:
+            mask &= combined_df["Source"].str.contains(input_source, case=False, na=False)
+
+        # ✅ Modify `combined_df` **in place** with filtered results
+        combined_df_filtered = combined_df.loc[mask].reset_index(drop=True)
+
+        # ✅ Add sequence number (starting from 1)
+        if not combined_df_filtered.empty:
+            combined_df_filtered.insert(0, "Sequence", range(1, len(combined_df_filtered) + 1), allow_duplicates=True)
+
+        # ✅ Display only one table (updated in place)
+        st.dataframe(combined_df_filtered, use_container_width=True, hide_index=True)
+
+        if combined_df_filtered.empty:
+            st.write("❌ No matching results. Try adjusting the filters.")
     else:
         st.write("⚠️ Error: GPU data has not been loaded. Please check if `main()` has run correctly.")
+
