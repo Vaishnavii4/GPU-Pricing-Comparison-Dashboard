@@ -359,45 +359,45 @@ def scrape_runpod_gpu_pricing():
     return gpu
 
 
-def scrape_nebius_gpu_pricing():
-    url = "https://nebius.com/prices"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    table = soup.find('div', class_='pc-table__table')
-    rows = table.find_all('div', class_='pc-table__row')
+# def scrape_nebius_gpu_pricing():
+#     url = "https://nebius.com/prices"
+#     response = requests.get(url)
+#     soup = BeautifulSoup(response.content, 'html.parser')
+#     table = soup.find('div', class_='pc-table__table')
+#     rows = table.find_all('div', class_='pc-table__row')
 
-    nebius_data = []
+#     nebius_data = []
 
-    for row in rows:
-        gpu_model = row.find('div', class_='pc-table__cell_justify_left')
-        gpu_model = gpu_model.text.strip() if gpu_model else "N/A"
-        if 'x' in gpu_model:
-            gpu_count = int(gpu_model.split('x')[0].strip())
-        else:
-            gpu_count = 1
-        if 'H100' not in gpu_model and 'L40s' not in gpu_model:
-            continue
+#     for row in rows:
+#         gpu_model = row.find('div', class_='pc-table__cell_justify_left')
+#         gpu_model = gpu_model.text.strip() if gpu_model else "N/A"
+#         if 'x' in gpu_model:
+#             gpu_count = int(gpu_model.split('x')[0].strip())
+#         else:
+#             gpu_count = 1
+#         if 'H100' not in gpu_model and 'L40s' not in gpu_model:
+#             continue
 
-        if 'H100' in gpu_model:
-            gpu_model = "Nvidia H100"
-        elif 'L40s' in gpu_model:
-            gpu_model = "Nvidia L40S"
+#         if 'H100' in gpu_model:
+#             gpu_model = "Nvidia H100"
+#         elif 'L40s' in gpu_model:
+#             gpu_model = "Nvidia L40S"
 
-        vram = row.find_all('div', class_='pc-table__cell_justify_right')[0].text.strip()
-        ram = row.find_all('div', class_='pc-table__cell_justify_right')[1].text.strip()
-        vcpus = row.find_all('div', class_='pc-table__cell_justify_right')[2].text.strip()
+#         vram = row.find_all('div', class_='pc-table__cell_justify_right')[0].text.strip()
+#         ram = row.find_all('div', class_='pc-table__cell_justify_right')[1].text.strip()
+#         vcpus = row.find_all('div', class_='pc-table__cell_justify_right')[2].text.strip()
 
-        price_on_demand = row.find_all('div', class_='pc-table__cell_justify_right')[3].text.strip()
-        price_reserve = row.find_all('div', class_='pc-table__cell_justify_right')[4].text.strip()
-
-
-        price_on_demand = format_currency(float(price_on_demand.replace('$', '').replace(',', '').strip()), 'USD', locale='en_US')
-        price_reserve = format_currency(float(price_reserve.replace('$', '').replace(',', '').strip()), 'USD', locale='en_US')
-
-        nebius_data.append([gpu_model, gpu_count, price_on_demand,vram, "Nebius"])
+#         price_on_demand = row.find_all('div', class_='pc-table__cell_justify_right')[3].text.strip()
+#         price_reserve = row.find_all('div', class_='pc-table__cell_justify_right')[4].text.strip()
 
 
-    return nebius_data
+#         price_on_demand = format_currency(float(price_on_demand.replace('$', '').replace(',', '').strip()), 'USD', locale='en_US')
+#         price_reserve = format_currency(float(price_reserve.replace('$', '').replace(',', '').strip()), 'USD', locale='en_US')
+
+#         nebius_data.append([gpu_model, gpu_count, price_on_demand,vram, "Nebius"])
+
+
+#     return nebius_data
 
 def scrape_gpu_pricing():
     url = "https://datacrunch.io/blog/cloud-gpu-pricing-comparison"
@@ -942,10 +942,10 @@ def main():
         combined_df = pd.concat([combined_df, filtered_df], ignore_index=True)
 
 
-    nebius_data =scrape_nebius_gpu_pricing()
-    if nebius_data:
-        df_n = pd.DataFrame(nebius_data, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
-        combined_df = pd.concat([combined_df, df_n], ignore_index=True)
+    # nebius_data =scrape_nebius_gpu_pricing()
+    # if nebius_data:
+    #     df_n = pd.DataFrame(nebius_data, columns=['GPU Model', 'GPU Count', 'Price', 'GPU RAM', 'Source'])
+    #     combined_df = pd.concat([combined_df, df_n], ignore_index=True)
 
     df_gpu_pricing = scrape_gpu_pricing()
 
